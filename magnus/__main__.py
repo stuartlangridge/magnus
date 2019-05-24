@@ -4,6 +4,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gio
 import cairo, math, json, os, codecs, time, subprocess, sys
+from functools import lru_cache
 
 __VERSION__ = "1.0"
 
@@ -16,6 +17,8 @@ class Main(object):
         self.resize_timeout = None
         self.window_metrics = None
         self.window_metrics_restored = False
+        self.decorations_height = 0
+        self.decorations_width = 0
 
     def handle_commandline(self, app, cmdline):
         if hasattr(self, "w"):
@@ -39,6 +42,7 @@ class Main(object):
         self.w.connect("destroy", Gtk.main_quit)
         self.w.connect("configure-event", self.read_window_size)
         self.w.connect("configure-event", self.window_configure)
+        self.w.connect("size-allocate", self.read_window_decorations_size)
         devman = self.w.get_screen().get_display().get_device_manager()
         self.pointer = devman.get_client_pointer()
 
@@ -67,12 +71,19 @@ class Main(object):
 
         self.width = 0
         self.height = 0
+        self.window_x = 0
+        self.window_y = 0
         GLib.timeout_add(250, self.read_window_size)
 
         # and, poll
         GLib.timeout_add(250, self.poll)
 
         GLib.idle_add(self.load_config)
+
+    def read_window_decorations_size(self, win, alloc):
+        sz = self.w.get_size()
+        self.decorations_width = alloc.width - sz.width
+        self.decorations_height = alloc.height - sz.height
 
     def set_zoom(self, zoom):
         self.zoomlevel = int(zoom.get_active_text()[0])
@@ -92,17 +103,59 @@ class Main(object):
         about_dialog.run()
         if about_dialog: about_dialog.destroy()
 
+    @lru_cache()
+    def makesquares(self, overall_width, overall_height, square_size, value_on, value_off):
+        on_sq = list(value_on) * square_size
+        off_sq = list(value_off) * square_size
+        on_row = []
+        off_row = []
+        while len(on_row) < overall_width * len(value_on):
+            on_row += on_sq
+            on_row += off_sq
+            off_row += off_sq
+            off_row += on_sq
+        on_row = on_row[:overall_width * len(value_on)]
+        off_row = off_row[:overall_width * len(value_on)]
+
+        on_sq_row = on_row * square_size
+        off_sq_row = off_row * square_size
+
+        overall = []
+        count = 0
+        while len(overall) < overall_width * overall_height * len(value_on):
+            overall += on_sq_row
+            overall += off_sq_row
+            count += 2
+        overall = overall[:overall_width * overall_height * len(value_on)]
+        return overall
+
+    @lru_cache()
+    def get_white_pixbuf(self, width, height):
+        square_size = 16
+        light = (153, 153, 153, 255)
+        dark = (102, 102, 102, 255)
+        whole = self.makesquares(width, height, square_size, light, dark)
+        arr = GLib.Bytes.new(whole)
+        return GdkPixbuf.Pixbuf.new_from_bytes(arr, GdkPixbuf.Colorspace.RGB, True, 8, 
+            width, height, width * len(light))
+
     def poll(self):
-        root = Gdk.get_default_root_window()
         display = Gdk.Display.get_default()
         (screen, x, y, modifier) = display.get_pointer()
-        scaled_width = self.width // self.zoomlevel
-        scaled_height = self.height // self.zoomlevel
-        scaled_xoff = scaled_width // 2
-        scaled_yoff = scaled_height // 2
-        screenshot = Gdk.pixbuf_get_from_window(root, x - scaled_xoff, y - scaled_yoff, scaled_width, scaled_height)
-        scaled_pb = screenshot.scale_simple(self.width, self.height, GdkPixbuf.InterpType.NEAREST)
-        self.img.set_from_pixbuf(scaled_pb)
+        if (x > self.window_x and x <= (self.window_x + self.width + self.decorations_width) and
+            y > self.window_y and y <= (self.window_y + self.height + self.decorations_height)):
+            # pointer is over our window, so make it an empty pixbuf
+            white = self.get_white_pixbuf(self.width, self.height)
+            self.img.set_from_pixbuf(white)
+        else:
+            root = Gdk.get_default_root_window()
+            scaled_width = self.width // self.zoomlevel
+            scaled_height = self.height // self.zoomlevel
+            scaled_xoff = scaled_width // 2
+            scaled_yoff = scaled_height // 2
+            screenshot = Gdk.pixbuf_get_from_window(root, x - scaled_xoff, y - scaled_yoff, scaled_width, scaled_height)
+            scaled_pb = screenshot.scale_simple(self.width, self.height, GdkPixbuf.InterpType.NEAREST)
+            self.img.set_from_pixbuf(scaled_pb)
         return True
 
     def window_configure(self, window, ev):
@@ -111,6 +164,8 @@ class Main(object):
             GLib.source_remove(self.resize_timeout)
         self.resize_timeout = GLib.timeout_add_seconds(1, self.save_window_metrics,
             {"x":ev.x, "y":ev.y, "w":ev.width, "h":ev.height})
+        self.window_x = ev.x
+        self.window_y = ev.y
 
     def save_window_metrics(self, props):
         scr = self.w.get_screen()
