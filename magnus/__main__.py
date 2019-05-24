@@ -54,7 +54,8 @@ class Main(object):
 
         # the zoom chooser
         zoom = Gtk.ComboBoxText.new()
-        for i in range(2, 5):
+        self.zoom = zoom
+        for i in range(2, 6):
             zoom.append(str(i), "{}×".format(i))
         zoom.set_active(0)
         zoom.connect("changed", self.set_zoom)
@@ -219,7 +220,13 @@ class Main(object):
             data = json.loads(contents)
             zl = data.get("zoom")
             if zl:
-                self.zoomlevel = zl
+                idx = 0
+                for row in self.zoom.get_model():
+                    text, lid = list(row)
+                    if lid == str(zl):
+                        self.zoom.set_active(idx)
+                        self.zoomlevel = zl
+                    idx += 1
             metrics = data.get("metrics")
             if metrics:
                 self.restore_window_metrics(metrics)
