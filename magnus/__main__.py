@@ -19,6 +19,8 @@ class Main(object):
         self.window_metrics_restored = False
         self.decorations_height = 0
         self.decorations_width = 0
+        self.last_x = -1
+        self.last_y = -1
 
     def handle_commandline(self, app, cmdline):
         if hasattr(self, "w"):
@@ -143,6 +145,11 @@ class Main(object):
     def poll(self):
         display = Gdk.Display.get_default()
         (screen, x, y, modifier) = display.get_pointer()
+        if x == self.last_x and y == self.last_y:
+            # bail if nothing would be different
+            return True
+        self.last_x = x
+        self.last_y = y
         if (x > self.window_x and x <= (self.window_x + self.width + self.decorations_width) and
             y > self.window_y and y <= (self.window_y + self.height + self.decorations_height)):
             # pointer is over our window, so make it an empty pixbuf
