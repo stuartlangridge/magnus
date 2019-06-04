@@ -224,7 +224,11 @@ class Main(object):
                 print("couldn't restore settings (error: %s), so assuming they're blank" % (e,))
                 contents = "{}" # fake contents
 
-            data = json.loads(contents)
+            try:
+                data = json.loads(contents)
+            except Exception as e:
+                print("Warning: settings file seemed to be invalid json (error: %s), so assuming blank" % (e,))
+                data = {}
             zl = data.get("zoom")
             if zl:
                 idx = 0
