@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Magnus
+GenericName=Magnus screen magnifier
+Comment=A very simple screen magnifier
+Exec=magnus
+Terminal=false
+Type=Application
+Categories=Utility;Accessibility;
+Keywords=magnifier;accessibility;utility;
+Icon=zoom-best-fit
+
