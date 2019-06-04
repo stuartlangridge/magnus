@@ -16,9 +16,11 @@
 
 A [PPA for Magnus](https://launchpad.net/~flexiondotorg/+archive/ubuntu/magnus) is published by [Martin Wimpress](https://github.com/flexiondotorg).
 
-    sudo add-apt-repository ppa:flexiondotorg/magnus
-    sudo apt update
-    sudo apt install magnus
+```bash
+sudo add-apt-repository ppa:flexiondotorg/magnus
+sudo apt update
+sudo apt install magnus
+```
 
 ### Source
 
