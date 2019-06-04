@@ -6,7 +6,7 @@ from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gio
 import cairo, math, json, os, codecs, time, subprocess, sys
 from functools import lru_cache
 
-__VERSION__ = "1.0"
+__VERSION__ = "1.0.0"
 
 
 class Main(object):
