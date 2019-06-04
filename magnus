@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
+import json
+import os
+import codecs
+import setproctitle
+import sys
+from functools import lru_cache
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gio
-import cairo, math, json, os, codecs, time, setproctitle, subprocess, sys
-from functools import lru_cache
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gio  # noqa: E402
 
 __VERSION__ = "1.0.1"
 
@@ -12,7 +16,9 @@ __VERSION__ = "1.0.1"
 class Main(object):
     def __init__(self):
         self.zoomlevel = 2
-        self.app = Gtk.Application.new("org.kryogenix.magnus", Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        self.app = Gtk.Application.new(
+            "org.kryogenix.magnus",
+            Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
         self.app.connect("command-line", self.handle_commandline)
         self.resize_timeout = None
         self.window_metrics = None
@@ -104,10 +110,12 @@ class Main(object):
         about_dialog.set_license_type(Gtk.License.MIT_X11)
         about_dialog.set_website("https://www.kryogenix.org/code/magnus")
         about_dialog.run()
-        if about_dialog: about_dialog.destroy()
+        if about_dialog:
+            about_dialog.destroy()
 
     @lru_cache()
-    def makesquares(self, overall_width, overall_height, square_size, value_on, value_off):
+    def makesquares(self, overall_width, overall_height, square_size,
+                    value_on, value_off):
         on_sq = list(value_on) * square_size
         off_sq = list(value_off) * square_size
         on_row = []
@@ -139,7 +147,8 @@ class Main(object):
         dark = (102, 102, 102, 255)
         whole = self.makesquares(width, height, square_size, light, dark)
         arr = GLib.Bytes.new(whole)
-        return GdkPixbuf.Pixbuf.new_from_bytes(arr, GdkPixbuf.Colorspace.RGB, True, 8, 
+        return GdkPixbuf.Pixbuf.new_from_bytes(
+            arr, GdkPixbuf.Colorspace.RGB, True, 8,
             width, height, width * len(light))
 
     def poll(self):
@@ -150,8 +159,10 @@ class Main(object):
             return True
         self.last_x = x
         self.last_y = y
-        if (x > self.window_x and x <= (self.window_x + self.width + self.decorations_width) and
-            y > self.window_y and y <= (self.window_y + self.height + self.decorations_height)):
+        if (x > self.window_x and
+                x <= (self.window_x + self.width + self.decorations_width) and
+                y > self.window_y and
+                y <= (self.window_y + self.height + self.decorations_height)):
             # pointer is over our window, so make it an empty pixbuf
             white = self.get_white_pixbuf(self.width, self.height)
             self.img.set_from_pixbuf(white)
@@ -161,17 +172,23 @@ class Main(object):
             scaled_height = self.height // self.zoomlevel
             scaled_xoff = scaled_width // 2
             scaled_yoff = scaled_height // 2
-            screenshot = Gdk.pixbuf_get_from_window(root, x - scaled_xoff, y - scaled_yoff, scaled_width, scaled_height)
-            scaled_pb = screenshot.scale_simple(self.width, self.height, GdkPixbuf.InterpType.NEAREST)
+            screenshot = Gdk.pixbuf_get_from_window(
+                root, x - scaled_xoff,
+                y - scaled_yoff, scaled_width, scaled_height)
+            scaled_pb = screenshot.scale_simple(
+                self.width, self.height,
+                GdkPixbuf.InterpType.NEAREST)
             self.img.set_from_pixbuf(scaled_pb)
         return True
 
     def window_configure(self, window, ev):
-        if not self.window_metrics_restored: return False
+        if not self.window_metrics_restored:
+            return False
         if self.resize_timeout:
             GLib.source_remove(self.resize_timeout)
-        self.resize_timeout = GLib.timeout_add_seconds(1, self.save_window_metrics,
-            {"x":ev.x, "y":ev.y, "w":ev.width, "h":ev.height})
+        self.resize_timeout = GLib.timeout_add_seconds(
+            1, self.save_window_metrics,
+            {"x": ev.x, "y": ev.y, "w": ev.width, "h": ev.height})
         self.window_x = ev.x
         self.window_y = ev.y
 
@@ -179,8 +196,8 @@ class Main(object):
         scr = self.w.get_screen()
         sw = float(scr.get_width())
         sh = float(scr.get_height())
-        # We save window dimensions as fractions of the screen dimensions, to cope with screen
-        # resolution changes while we weren't running
+        # We save window dimensions as fractions of the screen dimensions,
+        # to cope with screen resolution changes while we weren't running
         self.window_metrics = {
             "ww": props["w"] / sw,
             "wh": props["h"] / sh,
@@ -193,18 +210,19 @@ class Main(object):
         scr = self.w.get_screen()
         sw = float(scr.get_width())
         sh = float(scr.get_height())
-        self.w.set_size_request(int(sw * metrics["ww"]), int(sh * metrics["wh"]))
+        self.w.set_size_request(
+            int(sw * metrics["ww"]), int(sh * metrics["wh"]))
         self.w.move(int(sw * metrics["wx"]), int(sh * metrics["wy"]))
 
     def get_cache_file(self):
         return os.path.join(GLib.get_user_cache_dir(), "magnus.json")
 
     def serialise(self, *args, **kwargs):
-        # yeah, yeah, supposed to use Gio's async file stuff here. But it was writing
-        # corrupted files, and I have no idea why; probably the Python var containing
-        # the data was going out of scope or something. Anyway, we're only storing
-        # a small JSON file, so life's too short to hammer on this; we'll write with
-        # Python and take the hit.
+        # yeah, yeah, supposed to use Gio's async file stuff here. But it was
+        # writing corrupted files, and I have no idea why; probably the Python
+        # var containing the data was going out of scope or something. Anyway,
+        # we're only storing a small JSON file, so life's too short to hammer
+        # on this; we'll write with Python and take the hit.
         fp = codecs.open(self.get_cache_file(), encoding="utf8", mode="w")
         data = {"zoom": self.zoomlevel}
         if self.window_metrics:
@@ -218,35 +236,31 @@ class Main(object):
 
     def finish_loading_history(self, f, res):
         try:
-            try:
-                success, contents, _ = f.load_contents_finish(res)
-            except GLib.Error as e:
-                print("couldn't restore settings (error: %s), so assuming they're blank" % (e,))
-                contents = "{}" # fake contents
+            success, contents, _ = f.load_contents_finish(res)
+        except GLib.Error as e:
+            print(("couldn't restore settings (error: %s)"
+                   ", so assuming they're blank") % (e,))
+            contents = "{}"
 
-            try:
-                data = json.loads(contents)
-            except Exception as e:
-                print("Warning: settings file seemed to be invalid json (error: %s), so assuming blank" % (e,))
-                data = {}
-            zl = data.get("zoom")
-            if zl:
-                idx = 0
-                for row in self.zoom.get_model():
-                    text, lid = list(row)
-                    if lid == str(zl):
-                        self.zoom.set_active(idx)
-                        self.zoomlevel = zl
-                    idx += 1
-            metrics = data.get("metrics")
-            if metrics:
-                self.restore_window_metrics(metrics)
-            self.window_metrics_restored = True
-
-        except:
-            #print "Failed to restore data"
-            raise
-
+        try:
+            data = json.loads(contents)
+        except Exception as e:
+            print(("Warning: settings file seemed to be invalid json"
+                   " (error: %s), so assuming blank") % (e,))
+            data = {}
+        zl = data.get("zoom")
+        if zl:
+            idx = 0
+            for row in self.zoom.get_model():
+                text, lid = list(row)
+                if lid == str(zl):
+                    self.zoom.set_active(idx)
+                    self.zoomlevel = zl
+                idx += 1
+        metrics = data.get("metrics")
+        if metrics:
+            self.restore_window_metrics(metrics)
+        self.window_metrics_restored = True
 
 
 def main():
@@ -254,5 +268,6 @@ def main():
     m = Main()
     m.app.run(sys.argv)
 
-if __name__ == "__main__": main()
 
+if __name__ == "__main__":
+    main()
