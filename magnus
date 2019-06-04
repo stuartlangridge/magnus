@@ -27,16 +27,38 @@ class Main(object):
         self.decorations_width = 0
         self.last_x = -1
         self.last_y = -1
+        self.refresh_interval = 250
 
     def handle_commandline(self, app, cmdline):
+        args = cmdline.get_arguments()
         if hasattr(self, "w"):
             # already started
-            if "--about" in cmdline.get_arguments():
+            if "--about" in args:
                 self.show_about_dialog()
             return 0
+
+        if "--help" in args:
+            print("Options:")
+            print("  --about")
+            print("    Show about dialogue")
+            print("  --refresh-interval=120")
+            print("    Set refresh interval in milliseconds (lower is faster)")
+
+        # Override refresh rate on command line
+        for arg in args:
+            if arg.startswith("--refresh-interval="):
+                parts = arg.split("=")
+                if len(parts) == 2:
+                    try:
+                        rival = int(parts[1])
+                        print("Refresh interval set to {}ms".format(rival))
+                        self.refresh_interval = rival
+                    except ValueError:
+                        pass
+
         # First time startup
         self.start_everything_first_time()
-        if "--about" in cmdline.get_arguments():
+        if "--about" in args:
             self.show_about_dialog()
         return 0
 
@@ -85,7 +107,7 @@ class Main(object):
         GLib.timeout_add(250, self.read_window_size)
 
         # and, poll
-        GLib.timeout_add(250, self.poll)
+        GLib.timeout_add(self.refresh_interval, self.poll)
 
         GLib.idle_add(self.load_config)
 
