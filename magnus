@@ -12,8 +12,10 @@ __VERSION__ = "1.0.1"
 class Main(object):
     def __init__(self):
         self.zoomlevel = 2
+        self.polltime = 120
         self.app = Gtk.Application.new("org.kryogenix.magnus", Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
         self.app.connect("command-line", self.handle_commandline)
+        self.poll_timeout = None
         self.resize_timeout = None
         self.window_metrics = None
         self.window_metrics_restored = False
@@ -63,6 +65,17 @@ class Main(object):
         zoom.connect("changed", self.set_zoom)
         head.pack_end(zoom)
 
+        # the poll time chooser
+        pollchooser = Gtk.ComboBoxText.new()
+        self.pollchooser = pollchooser
+        pollchooser.append("60", "60ms")
+        pollchooser.append("120", "120ms")
+        pollchooser.append("144", "144ms")
+        pollchooser.append("240", "240ms")
+        pollchooser.set_active_id(str(self.polltime))
+        pollchooser.connect("changed", self.set_poll_time)
+        head.pack_end(pollchooser)
+
         # the box that contains everything
         self.img = Gtk.Image()
         scrolled_window = Gtk.ScrolledWindow()
@@ -79,9 +92,14 @@ class Main(object):
         GLib.timeout_add(250, self.read_window_size)
 
         # and, poll
-        GLib.timeout_add(250, self.poll)
+        self.restart_polling()
 
         GLib.idle_add(self.load_config)
+
+    def restart_polling(self):
+        if self.poll_timeout:
+            GLib.source_remove(self.poll_timeout)
+        self.poll_timeout = GLib.timeout_add(self.polltime, self.poll)
 
     def read_window_decorations_size(self, win, alloc):
         sz = self.w.get_size()
@@ -90,6 +108,10 @@ class Main(object):
 
     def set_zoom(self, zoom):
         self.zoomlevel = int(zoom.get_active_text()[0])
+
+    def set_poll_time(self, pollchooser):
+        self.polltime = int(pollchooser.get_active_id())
+        self.restart_polling()
 
     def read_window_size(self, *args):
         loc = self.w.get_size()
@@ -206,7 +228,7 @@ class Main(object):
         # a small JSON file, so life's too short to hammer on this; we'll write with
         # Python and take the hit.
         fp = codecs.open(self.get_cache_file(), encoding="utf8", mode="w")
-        data = {"zoom": self.zoomlevel}
+        data = {"zoom": self.zoomlevel, "poll": self.polltime}
         if self.window_metrics:
             data["metrics"] = self.window_metrics
         json.dump(data, fp, indent=2)
@@ -233,6 +255,15 @@ class Main(object):
                     if lid == str(zl):
                         self.zoom.set_active(idx)
                         self.zoomlevel = zl
+                    idx += 1
+            pt = data.get("poll")
+            if pt:
+                idx = 0
+                for row in self.pollchooser.get_model():
+                    text, lid = list(row)
+                    if lid == str(pt):
+                        self.pollchooser.set_active(idx)
+                        self.polltime = pt
                     idx += 1
             metrics = data.get("metrics")
             if metrics:
