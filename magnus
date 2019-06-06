@@ -8,7 +8,9 @@ import sys
 from functools import lru_cache
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gio  # noqa: E402
+gi.require_version('Keybinder', '3.0')
+from gi.repository import \
+    Gtk, Gdk, GLib, GdkPixbuf, Gio, Keybinder  # noqa: E402
 
 __VERSION__ = "1.0.1"
 
@@ -97,6 +99,12 @@ class Main(object):
         scrolled_window.add(self.img)
         self.w.add(scrolled_window)
 
+        # bind the zoom keyboard shortcuts
+        Keybinder.init()
+        if Keybinder.supported():
+            Keybinder.bind("<Alt><Super>plus", self.zoom_in, zoom)
+            Keybinder.bind("<Alt><Super>minus", self.zoom_out, zoom)
+
         # and, go
         self.w.show_all()
 
@@ -111,6 +119,19 @@ class Main(object):
 
         GLib.idle_add(self.load_config)
 
+    def zoom_out(self, keypress, zoom):
+        current_index = zoom.get_active()
+        if current_index == 0: return
+        zoom.set_active(current_index - 1)
+        self.set_zoom(zoom)
+
+    def zoom_in(self, keypress, zoom):
+        current_index = zoom.get_active()
+        size = zoom.get_model().iter_n_children(None)
+        if current_index == size - 1: return
+        zoom.set_active(current_index + 1)
+        self.set_zoom(zoom)
+
     def read_window_decorations_size(self, win, alloc):
         sz = self.w.get_size()
         self.decorations_width = alloc.width - sz.width
@@ -118,6 +139,7 @@ class Main(object):
 
     def set_zoom(self, zoom):
         self.zoomlevel = int(zoom.get_active_text()[0])
+        self.poll(force_refresh=True)
 
     def read_window_size(self, *args):
         loc = self.w.get_size()
@@ -173,12 +195,13 @@ class Main(object):
             arr, GdkPixbuf.Colorspace.RGB, True, 8,
             width, height, width * len(light))
 
-    def poll(self):
+    def poll(self, force_refresh=False):
         display = Gdk.Display.get_default()
         (screen, x, y, modifier) = display.get_pointer()
         if x == self.last_x and y == self.last_y:
             # bail if nothing would be different
-            return True
+            if not force_refresh:
+                return True
         self.last_x = x
         self.last_y = y
         if (x > self.window_x and
