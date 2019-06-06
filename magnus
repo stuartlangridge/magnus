@@ -121,14 +121,16 @@ class Main(object):
 
     def zoom_out(self, keypress, zoom):
         current_index = zoom.get_active()
-        if current_index == 0: return
+        if current_index == 0:
+            return
         zoom.set_active(current_index - 1)
         self.set_zoom(zoom)
 
     def zoom_in(self, keypress, zoom):
         current_index = zoom.get_active()
         size = zoom.get_model().iter_n_children(None)
-        if current_index == size - 1: return
+        if current_index == size - 1:
+            return
         zoom.set_active(current_index + 1)
         self.set_zoom(zoom)
 
