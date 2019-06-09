@@ -103,6 +103,7 @@ class Main(object):
         Keybinder.init()
         if Keybinder.supported():
             Keybinder.bind("<Alt><Super>plus", self.zoom_in, zoom)
+            Keybinder.bind("<Alt><Super>equal", self.zoom_in, zoom)
             Keybinder.bind("<Alt><Super>minus", self.zoom_out, zoom)
 
         # and, go
