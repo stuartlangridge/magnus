@@ -68,20 +68,24 @@ class Main(object):
                         pass
             if arg == "--started-by-keypress":
                 self.started_by_keypress = True
-                # This is here so that the autostart desktop file can specify it.
-                # The idea is that Gnome-ish desktops have an explicit keybinding
-                # to run the system magnifier; what this keybinding actually does,
-                # via the {desktop}-settings-daemon, is toggle the gsettings key
+                # This is here so that the autostart desktop file can
+                # specify it.
+                # The idea is that Gnome-ish desktops have an explicit
+                # keybinding to run the system magnifier; what this keybinding
+                # actually does, via the {desktop}-settings-daemon, is toggle
+                # the gsettings key
                 # org.gnome.desktop.a11y.applications screen-magnifier-enabled
-                # Magnus provides a desktop file to go in /etc/xdg/autostart which
-                # contains an AutostartCondition of
-                # GSettings org.gnome.desktop.a11y.applications screen-magnifier-enabled
-                # and then the {desktop}-session daemon takes care of starting the
-                # app when that key goes true, and closing the app if that 
-                # key goes false. However, the user may also explicitly quit Magnus
-                # with the close icon or alt-f4 or similar. If they do so, then
-                # we explicitly set the key back to false, so that the global
-                # keybinding to run the magnifier stays in sync.
+                # Magnus provides a desktop file to go in /etc/xdg/autostart
+                # which contains an AutostartCondition of
+                # GSettings org.gnome.desktop.a11y.applications /
+                #       screen-magnifier-enabled
+                # and then the {desktop}-session daemon takes care of
+                # starting the app when that key goes true, and closing the
+                # app if that key goes false. However, the user may also
+                # explicitly quit Magnus with the close icon or alt-f4
+                # or similar. If they do so, then we explicitly set the key
+                # back to false, so that the global keybinding to run the
+                # magnifier stays in sync.
 
         # First time startup
         self.start_everything_first_time()

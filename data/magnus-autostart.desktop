@@ -1,8 +1,9 @@
 [Desktop Entry]
 Type=Application
 Name=Magnus screen magnifier
-Exec=magnus
+Exec=magnus --started-by-keypress
 NoDisplay=true
-AutostartCondition=AutostartCondition=GSettings org.gnome.desktop.a11y.applications screen-magnifier-enabled
+AutostartCondition=GSettings org.gnome.desktop.a11y.applications screen-magnifier-enabled
 X-MATE-AutoRestart=true
+X-GNOME-AutoRestart=true
 NotShowIn=GNOME;
