@@ -6,4 +6,3 @@ NoDisplay=true
 AutostartCondition=GSettings org.gnome.desktop.a11y.applications screen-magnifier-enabled
 X-MATE-AutoRestart=true
 X-GNOME-AutoRestart=true
-NotShowIn=GNOME;
