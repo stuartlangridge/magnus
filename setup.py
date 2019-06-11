@@ -38,7 +38,7 @@ def datafilelist(installbase, sourcebase):
 data_files = [
     ('{prefix}/share/man/man1'.format(prefix=sys.prefix), glob('data/*.1')),
     ('{prefix}/share/applications'.format(prefix=sys.prefix), ['data/magnus.desktop',]),
-    ('{prefix}/etc/xdg/autostart'.format(prefix=sys.prefix), ['data/magnus-autostart.desktop',]),
+    ('/etc/xdg/autostart'.format(prefix=sys.prefix), ['data/magnus-autostart.desktop',]),
 ]
 #data_files.extend(datafilelist('{prefix}/share/locale'.format(prefix=sys.prefix), 'build/mo'))
 
