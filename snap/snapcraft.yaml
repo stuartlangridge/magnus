@@ -1,0 +1,95 @@
+name: magnus
+version: git
+version-script: |
+  VER=$(grep __VERSION__ magnus | head -n 1 | cut -d'=' -f2 | sed 's/ //g' | sed "s/\"//g")
+  REV=$(git rev-parse --short HEAD)
+  echo $VER-$REV
+summary: Magnus screen magnifier
+description: |
+  A very simple screen magnifier
+icon: data/logo.png
+
+base: core18
+grade: stable
+confinement: strict
+
+plugs:
+  gnome-3-28-1804:
+    interface: content
+    target: gnome-platform
+    default-provider: gnome-3-28-1804:gnome-3-28-1804
+  gtk-3-themes:
+    interface: content
+    target: $SNAP/share/themes
+    default-provider: gtk-common-themes:gtk-3-themes
+  icon-themes:
+    interface: content
+    target: $SNAP/share/icons
+    default-provider: gtk-common-themes:icon-themes
+  sound-themes:
+    interface: content
+    target: $SNAP/share/sounds
+    default-provider: gtk-common-themes:sounds-themes
+
+slots:
+  magnus-dbus:
+    interface: dbus
+    name: org.kryogenix.magnus
+    bus: session
+
+apps:
+  magnus:
+    command: desktop-launch $SNAP/bin/magnus
+    desktop: usr/share/applications/magnus.desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - home
+      - wayland
+      - x11
+
+parts:
+  desktop-gtk3:
+    build-packages:
+      - libgtk-3-dev
+    make-parameters:
+      - FLAVOR=gtk3
+    plugin: make
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: gtk
+
+  # Python's DistUtilsExtra causes pip install failure
+  # https://forum.snapcraft.io/t/use-of-pythons-distutilsextra-causes-pip-install-failure/802
+  magnus:
+    after:
+      - desktop-gtk3
+    source: .
+    plugin: nil
+    stage-packages:
+      - gir1.2-gdkpixbuf-2.0
+      - gir1.2-glib-2.0
+      - gir1.2-gtk-3.0
+      - gir1.2-keybinder-3.0
+      - python3-gi
+      - python3-setproctitle
+    override-build: |
+      snapcraftctl build
+      install -D -m 755 -o root magnus $SNAPCRAFT_PART_INSTALL/bin/magnus
+      install -D -m 644 -o root data/logo.png $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps/magnus.png
+      install -D -m 644 -o root data/magnus.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/magnus.desktop
+      sed -i 's|Icon=zoom-best-fit|Icon=/usr/share/pixmaps/magnus\.png|' ${SNAPCRAFT_PART_INSTALL}/usr/share/applications/magnus.desktop
+    # Most of what Magnus requires in provide by the GNOME platform snap, so just prime what we need.
+    prime:
+      - bin
+      - command-*.wrapper
+      - flavor-select
+      - lib
+      - usr/bin/py*
+      - usr/lib/girepository-1.0
+      - usr/lib/python3*
+      - usr/lib/*/gio
+      - usr/lib/*/girepository-1.0
+      - usr/lib/*/libkeybinder*
+      - usr/share/applications/magnus.desktop
+      - usr/share/pixmaps/magnus.png
