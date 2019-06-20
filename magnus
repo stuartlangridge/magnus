@@ -172,6 +172,7 @@ class Main(object):
     def set_zoom(self, zoom):
         self.zoomlevel = int(zoom.get_active_text()[0])
         self.poll(force_refresh=True)
+        self.serialise()
 
     def read_window_size(self, *args):
         loc = self.w.get_size()
