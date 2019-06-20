@@ -6,7 +6,7 @@ version-script: |
   echo $VER-$REV
 summary: Magnus screen magnifier
 description: |
-  A very simple screen magnifier
+  A very simple screen magnifier.
 icon: data/logo.png
 
 base: core18
@@ -79,13 +79,13 @@ parts:
       install -D -m 644 -o root data/logo.png $SNAPCRAFT_PART_INSTALL/usr/share/pixmaps/magnus.png
       install -D -m 644 -o root data/magnus.desktop $SNAPCRAFT_PART_INSTALL/usr/share/applications/magnus.desktop
       sed -i 's|Icon=zoom-best-fit|Icon=/usr/share/pixmaps/magnus\.png|' ${SNAPCRAFT_PART_INSTALL}/usr/share/applications/magnus.desktop
-    # Most of what Magnus requires in provide by the GNOME platform snap, so just prime what we need.
+    # Most of what Magnus requires is provided by the GNOME platform snap; so just prime what we need.
     prime:
       - bin
       - command-*.wrapper
       - flavor-select
       - lib
-      - usr/bin/py*
+      - usr/bin/python*
       - usr/lib/girepository-1.0
       - usr/lib/python3*
       - usr/lib/*/gio
