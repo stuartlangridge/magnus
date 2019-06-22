@@ -6,7 +6,7 @@ version-script: |
   echo $VER-$REV
 summary: Magnus screen magnifier
 description: |
-  A very simple screen magnifier.
+  Magnus is a very simple desktop magnifier, showing the area around the mouse pointer in a separate window magnified two, three, four, or five times. Useful for users who need magnification, whether to help with eyesight or for accurate graphical design or detail work.
 icon: data/logo.png
 
 base: core18
