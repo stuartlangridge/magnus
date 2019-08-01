@@ -100,7 +100,7 @@ class Main(object):
         self.w = Gtk.ApplicationWindow.new(self.app)
         self.w.set_size_request(300, 300)
         self.w.set_title("Magnus")
-        self.w.connect("destroy", Gtk.main_quit)
+        self.w.connect("destroy", lambda a: self.app.quit())
         self.w.connect("configure-event", self.read_window_size)
         self.w.connect("configure-event", self.window_configure)
         self.w.connect("size-allocate", self.read_window_decorations_size)
@@ -265,10 +265,15 @@ class Main(object):
         if self.resize_timeout:
             GLib.source_remove(self.resize_timeout)
         self.resize_timeout = GLib.timeout_add_seconds(
-            1, self.save_window_metrics,
+            1, self.save_window_metrics_after_timeout,
             {"x": ev.x, "y": ev.y, "w": ev.width, "h": ev.height})
         self.window_x = ev.x
         self.window_y = ev.y
+
+    def save_window_metrics_after_timeout(self, props):
+        GLib.source_remove(self.resize_timeout)
+        self.resize_timeout = None
+        self.save_window_metrics(props)
 
     def save_window_metrics(self, props):
         scr = self.w.get_screen()
