@@ -12,7 +12,7 @@ gi.require_version('Keybinder', '3.0')
 from gi.repository import \
     Gtk, Gdk, GLib, GdkPixbuf, Gio, Keybinder  # noqa: E402
 
-__VERSION__ = "1.0.1"
+__VERSION__ = "1.0.3"
 
 
 class Main(object):
