@@ -28,6 +28,8 @@ class Main(object):
         self.window_metrics_restored = False
         self.decorations_height = 0
         self.decorations_width = 0
+        self.min_x = 300
+        self.min_y = 300
         self.last_x = -1
         self.last_y = -1
         self.refresh_interval = 250
@@ -98,7 +100,7 @@ class Main(object):
 
         # the window
         self.w = Gtk.ApplicationWindow.new(self.app)
-        self.w.set_size_request(300, 300)
+        self.w.set_size_request(self.min_x, self.min_y)
         self.w.set_title("Magnus")
         self.w.connect("destroy", lambda a: self.app.quit())
         self.w.connect("configure-event", self.read_window_size)
@@ -293,7 +295,8 @@ class Main(object):
         scr = self.w.get_screen()
         sw = float(scr.get_width())
         sh = float(scr.get_height())
-        self.w.set_size_request(
+        self.w.set_size_request(self.min_x, self.min_y)
+        self.w.resize(
             int(sw * metrics["ww"]), int(sh * metrics["wh"]))
         self.w.move(int(sw * metrics["wx"]), int(sh * metrics["wy"]))
 
