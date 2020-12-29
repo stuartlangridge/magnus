@@ -30,8 +30,6 @@ class Main(object):
         self.decorations_width = 0
         self.min_width = 300
         self.min_height = 300
-        self.last_x = -1
-        self.last_y = -1
         self.refresh_interval = 250
         self.started_by_keypress = False
 
@@ -173,7 +171,7 @@ class Main(object):
 
     def set_zoom(self, zoom):
         self.zoomlevel = int(zoom.get_active_text()[0])
-        self.poll(force_refresh=True)
+        self.poll()
         self.serialise()
 
     def read_window_size(self, *args):
@@ -230,15 +228,9 @@ class Main(object):
             arr, GdkPixbuf.Colorspace.RGB, True, 8,
             width, height, width * len(light))
 
-    def poll(self, force_refresh=False):
+    def poll(self):
         display = Gdk.Display.get_default()
         (screen, x, y, modifier) = display.get_pointer()
-        if x == self.last_x and y == self.last_y:
-            # bail if nothing would be different
-            if not force_refresh:
-                return True
-        self.last_x = x
-        self.last_y = y
         if (x > self.window_x and
                 x <= (self.window_x + self.width + self.decorations_width) and
                 y > self.window_y and
