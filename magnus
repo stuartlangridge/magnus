@@ -34,6 +34,7 @@ class Main(object):
         self.last_y = -1
         self.refresh_interval = 250
         self.started_by_keypress = False
+        self.force_refresh = False
 
     def handle_shutdown(self, app):
         if self.started_by_keypress:
@@ -56,6 +57,14 @@ class Main(object):
             print("    Show about dialogue")
             print("  --refresh-interval=120")
             print("    Set refresh interval in milliseconds (lower is faster)")
+            print("  --force-refresh")
+            print("    Refresh every on interval even if the viewport has not moved.")
+            return 0
+
+        if "--force-refresh" in args:
+            # If this argument is supplied, refresh the view even if the mouse
+            # has not moved. Useful if the screen content is video.
+            self.force_refresh = True
 
         # Override refresh rate on command line
         for arg in args:
@@ -235,7 +244,7 @@ class Main(object):
         (screen, x, y, modifier) = display.get_pointer()
         if x == self.last_x and y == self.last_y:
             # bail if nothing would be different
-            if not force_refresh:
+            if not force_refresh and not self.force_refresh:
                 return True
         self.last_x = x
         self.last_y = y
