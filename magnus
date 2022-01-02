@@ -58,7 +58,8 @@ class Main(object):
             print("  --refresh-interval=120")
             print("    Set refresh interval in milliseconds (lower is faster)")
             print("  --force-refresh")
-            print("    Refresh every on interval even if the viewport has not moved.")
+            print("    Refresh continually (according to refresh interval)")
+            print("      even if the mouse has not moved")
             return 0
 
         if "--force-refresh" in args:
