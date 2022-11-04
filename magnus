@@ -12,7 +12,7 @@ gi.require_version('Keybinder', '3.0')
 from gi.repository import \
     Gtk, Gdk, GLib, GdkPixbuf, Gio, Keybinder  # noqa: E402
 
-__VERSION__ = "1.0.3"
+__VERSION__ = "1.0.3.1"
 
 
 class Main(object):
@@ -246,6 +246,7 @@ class Main(object):
         if x == self.last_x and y == self.last_y:
             # bail if nothing would be different
             if not force_refresh and not self.force_refresh:
+                self.refresh(x, y)
                 return True
         self.last_x = x
         self.last_y = y
@@ -257,19 +258,23 @@ class Main(object):
             white = self.get_white_pixbuf(self.width, self.height)
             self.img.set_from_pixbuf(white)
         else:
-            root = Gdk.get_default_root_window()
-            scaled_width = self.width // self.zoomlevel
-            scaled_height = self.height // self.zoomlevel
-            scaled_xoff = scaled_width // 2
-            scaled_yoff = scaled_height // 2
-            screenshot = Gdk.pixbuf_get_from_window(
-                root, x - scaled_xoff,
-                y - scaled_yoff, scaled_width, scaled_height)
-            scaled_pb = screenshot.scale_simple(
-                self.width, self.height,
-                GdkPixbuf.InterpType.NEAREST)
-            self.img.set_from_pixbuf(scaled_pb)
+            self.refresh(x, y)
         return True
+
+    def refresh(self, x, y):
+        """Refresh painting region with coordinates x, y"""
+        root = Gdk.get_default_root_window()
+        scaled_width = self.width // self.zoomlevel
+        scaled_height = self.height // self.zoomlevel
+        scaled_xoff = scaled_width // 2
+        scaled_yoff = scaled_height // 2
+        screenshot = Gdk.pixbuf_get_from_window(
+            root, x - scaled_xoff,
+            y - scaled_yoff, scaled_width, scaled_height)
+        scaled_pb = screenshot.scale_simple(
+            self.width, self.height,
+            GdkPixbuf.InterpType.NEAREST)
+        self.img.set_from_pixbuf(scaled_pb)
 
     def window_configure(self, window, ev):
         if not self.window_metrics_restored:
