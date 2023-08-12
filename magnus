@@ -119,12 +119,6 @@ class Main(object):
         devman = self.w.get_screen().get_display().get_device_manager()
         self.pointer = devman.get_client_pointer()
 
-        # the headerbar
-        head = Gtk.HeaderBar()
-        head.set_show_close_button(True)
-        head.props.title = "Magnus"
-        self.w.set_titlebar(head)
-
         # the zoom chooser
         zoom = Gtk.ComboBoxText.new()
         self.zoom = zoom
@@ -132,13 +126,34 @@ class Main(object):
             zoom.append(str(i), "{}×".format(i))
         zoom.set_active(0)
         zoom.connect("changed", self.set_zoom)
-        head.pack_end(zoom)
 
         # the box that contains everything
         self.img = Gtk.Image()
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.add(self.img)
-        self.w.add(scrolled_window)
+
+        # headerbar or no csd
+        use_headerbar = True
+        if "GTK_CSD" in os.environ:
+            gtk_csd = os.environ.get("GTK_CSD")
+            if gtk_csd == "0" or gtk_csd == "no" or gtk_csd == "":
+                use_headerbar = False
+        if use_headerbar:
+            # the headerbar
+            head = Gtk.HeaderBar()
+            head.set_show_close_button(True)
+            head.props.title = "Magnus"
+            self.w.set_titlebar(head)
+            head.pack_end(zoom)
+            self.w.add(scrolled_window)
+        else:
+            # use regular assets
+            scrolled_window.set_hexpand(True)
+            scrolled_window.set_vexpand(True)
+            grid = Gtk.Grid(column_homogeneous=False)
+            grid.add(zoom)
+            grid.attach(scrolled_window,0,1,4,4)
+            self.w.add(grid)
 
         # bind the zoom keyboard shortcuts
         Keybinder.init()
