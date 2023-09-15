@@ -1,11 +1,29 @@
 [Desktop Entry]
-Name=Magnus
-GenericName=Magnus screen magnifier
-Comment=A very simple screen magnifier
+Categories=Utility;Accessibility;
 Exec=magnus
+Icon=zoom-best-fit
 Terminal=false
 Type=Application
-Categories=Utility;Accessibility;
-Keywords=magnifier;accessibility;utility;
-Icon=zoom-best-fit
 
+Name=Magnus
+Name[fr]=Magnus une loupe sur l’écran
+Name[fr_BE]=Magnus une loupe sur l’écran
+Name[ja]=Magnus
+Name[pt_BR]=Lupa de Tela Magnus
+
+GenericName=Magnus screen magnifier
+GenericName[fr]=Magnus Outil permettant d’agrandir des zones spécifiques de l’écran
+GenericName[fr_BE]=Magnus Outil permettant d’agrandir des zones spécifiques de l’écran
+GenericName[ja]=Magnusスクリーン拡大鏡
+GenericName[pt_BR]=Ferramenta para ampliar áreas específicas da tela
+
+Comment=A very simple screen magnifier
+Comment[fr]=« Magnus » est un outil d’accessibilité qui vous permet d’agrandir des zones spécifiques de l’écran afin d’améliorer la lisibilité des polices, des icônes et d’autres données.
+Comment[fr_BE]=« Magnus » est un outil d’accessibilité qui vous permet d’agrandir des zones spécifiques de l’écran afin d’améliorer la lisibilité des polices, des icônes et d’autres données.
+Comment[ja]=とてもシンプルなスクリーン拡大鏡
+Comment[pt_BR]=O ‘Magnus’ é uma ferramenta de acessibilidade que permite ampliar áreas específicas da tela para melhorar a legibilidade e a visibilidade das fontes, dos ícones e de outros dados
+
+Keywords=magnifier;accessibility;utility;
+Keywords[fr]=magnifier;accessibility;utility;loupe;accessibilité;agrandir;grossir;voir;visualiser;utilitaire;
+Keywords[fr_BE]=magnifier;accessibility;utility;loupe;accessibilité;agrandir;grossir;voir;visualiser;utilitaire;
+Keywords[pt_BR]=lupa;acessibilidade;utilidade;utilitário;ampliar;aumentar;enxergar;visualizar;coisas;pequenas;na tela;
