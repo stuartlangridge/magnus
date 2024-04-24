@@ -12,7 +12,7 @@ gi.require_version('Keybinder', '3.0')
 from gi.repository import \
     Gtk, Gdk, GLib, GdkPixbuf, Gio, Keybinder  # noqa: E402
 
-__VERSION__ = "1.0.4"
+__VERSION__ = "1.0.5"
 
 
 class Main(object):
@@ -35,6 +35,7 @@ class Main(object):
         self.refresh_interval = 250
         self.started_by_keypress = False
         self.force_refresh = False
+        self.reticule = False
 
     def handle_shutdown(self, app):
         if self.started_by_keypress:
@@ -60,6 +61,8 @@ class Main(object):
             print("  --force-refresh")
             print("    Refresh continually (according to refresh interval)")
             print("      even if the mouse has not moved")
+            print("  --reticule=255,255,255")
+            print("    Use a reticule, and set to this RGB color.")
             return 0
 
         if "--force-refresh" in args:
@@ -98,6 +101,18 @@ class Main(object):
                 # or similar. If they do so, then we explicitly set the key
                 # back to false, so that the global keybinding to run the
                 # magnifier stays in sync.
+            if arg.startswith("--reticule"):
+                self.reticule = True
+                self.reticule_color = [255, 0, 0]
+                try:
+                    rgb = arg.split("=")[1].split(",")
+                    if len(rgb) == 3:
+                        self.reticule_color = [int(i) for i in rgb]
+                        print("Using reticule color {}".format(self.reticule_color))
+                    else:
+                        raise Exception
+                except:
+                    print("Using fallback reticule color")
 
         # First time startup
         self.start_everything_first_time()
@@ -127,6 +142,10 @@ class Main(object):
         zoom.set_active(0)
         zoom.connect("changed", self.set_zoom)
 
+        # RGB label if using a reticule
+        if self.reticule:
+            self.lbl_color = Gtk.Label.new()
+
         # the box that contains everything
         self.img = Gtk.Image()
         scrolled_window = Gtk.ScrolledWindow()
@@ -145,6 +164,8 @@ class Main(object):
             head.props.title = "Magnus"
             self.w.set_titlebar(head)
             head.pack_end(zoom)
+            if self.reticule:
+                head.pack_end(self.lbl_color)
             self.w.add(scrolled_window)
         else:
             # use regular assets
@@ -152,6 +173,8 @@ class Main(object):
             scrolled_window.set_vexpand(True)
             grid = Gtk.Grid(column_homogeneous=False)
             grid.add(zoom)
+            if self.reticule:
+                grid.add(self.lbl_color)
             grid.attach(scrolled_window,0,1,4,4)
             self.w.add(grid)
 
@@ -197,7 +220,7 @@ class Main(object):
         self.decorations_height = alloc.height - sz.height
 
     def set_zoom(self, zoom):
-        self.zoomlevel = int(zoom.get_active_text()[0])
+        self.zoomlevel = int(zoom.get_active_text().replace("×",""))
         self.poll(force_refresh=True)
         self.serialise()
 
@@ -283,8 +306,48 @@ class Main(object):
             scaled_pb = screenshot.scale_simple(
                 self.width, self.height,
                 GdkPixbuf.InterpType.NEAREST)
+            if self.reticule:
+                scaled_pb,  color = self.add_reticule(scaled_pb, self.zoomlevel)
+                self.lbl_color.set_text(str(color))
             self.img.set_from_pixbuf(scaled_pb)
         return True
+
+    def add_reticule(self, image, zoomlevel):
+        """
+        Add the reticule to the center.
+        """
+        # FIXME: the pnm gets distorted if the window is not squared
+        w, h = image.get_width(), image.get_height()
+        s_w = self.width // self.zoomlevel
+        s_h = self.height // self.zoomlevel
+        raw_pixels = bytearray(image.get_pixels())
+        # We need the remainder, which matters for odd zoomlevel
+        z = zoomlevel // 2
+        z2 = zoomlevel - z
+        cw = w // 2
+        ch = h // 2
+        startx = cw - (z if s_w % 2 else 0) - 1
+        endx = cw + z2 + (0 if s_w % 2 else z)
+        starty = ch - (z if s_h % 2 else 0) - 1
+        endy = ch + z2 + (0 if s_h % 2 else z)
+        # This is not tested against a zoom of 1x, but at least we are
+        # collecting the color before drawing the reticule
+        center_color = self.get_pixel_color(raw_pixels, startx + 1, starty + 1, w)
+        # left and right
+        for i in [startx, endx]:
+            for j in range(starty, endy + 1):
+                raw_pixels = self.draw_pixel(raw_pixels, i, j, self.reticule_color, w, h)
+        # top and bottom
+        for i in range(startx, endx + 1):
+            for j in [starty, endy]:
+                raw_pixels = self.draw_pixel(raw_pixels, i, j, self.reticule_color, w, h)
+        output_image = GdkPixbuf.PixbufLoader.new_with_type('pnm')
+        # magic value for pnm
+        output_image.write(bytes(f'P6\n\n{w} {h}\n255\n','ascii'))
+        output_image.write(raw_pixels)
+        output_image.close()
+        output_image = output_image.get_pixbuf()
+        return output_image, center_color
 
     def window_configure(self, window, ev):
         if not self.window_metrics_restored:
@@ -373,6 +436,32 @@ class Main(object):
             self.restore_window_metrics(metrics)
         self.window_metrics_restored = True
 
+    def draw_pixel(self, old_pixels, x, y, rgb, w, h):
+        """
+        Draw on the bytearray like it is a canvas.
+        Adapted from https://stackoverflow.com/questions/28357155/how-to-edit-pixels-of-a-pixbuf-in-python-gdk
+        """
+        pixels = old_pixels # bytearray
+        # make sure pixel data is reasonable
+        x = min(x, w)
+        y = min(y, h)
+        r = min(rgb[0], 255)
+        g = min(rgb[1], 255)
+        b = min(rgb[2], 255)
+        # insert pixel data at right location in bytes array
+        i = y*w + x
+        pixels[i*3 + 0] = r
+        pixels[i*3 + 1] = g
+        pixels[i*3 + 2] = b
+        return pixels
+
+    def get_pixel_color(self, pixels, x, y, w):
+        """
+        Return (r, g, b) tuple for the given pixel from bytearray pixels.
+        """
+        i = y*w + x
+        r, g, b = pixels[i*3:i*3+3]
+        return (r, g, b)
 
 def main():
     setproctitle.setproctitle('magnus')
