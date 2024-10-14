@@ -22,6 +22,8 @@ sudo apt update
 sudo apt install magnus
 ```
 
+There's also an Ansible deployment by Taha Ahmed at [codeberg](https://codeberg.org/ansible/magnus).
+
 ### Source
 
 You'll need the following dependencies:
