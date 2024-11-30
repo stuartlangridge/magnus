@@ -35,6 +35,9 @@ class Main(object):
         self.refresh_interval = 250
         self.started_by_keypress = False
         self.force_refresh = False
+        self.position_lock = False
+        self.position_x = 0
+        self.position_y = 0
 
     def handle_shutdown(self, app):
         if self.started_by_keypress:
@@ -60,12 +63,21 @@ class Main(object):
             print("  --force-refresh")
             print("    Refresh continually (according to refresh interval)")
             print("      even if the mouse has not moved")
+            print("  --position x y")
+            print("    Set center of view, disable mouse tracking")
             return 0
 
         if "--force-refresh" in args:
             # If this argument is supplied, refresh the view even if the mouse
             # has not moved. Useful if the screen content is video.
             self.force_refresh = True
+
+
+        if '--position' in args:
+            i = args.index('--position')
+            self.position_lock = True
+            self.position_x = int(args[i+1])
+            self.position_y = int(args[i+2])
 
         # Override refresh rate on command line
         for arg in args:
@@ -256,14 +268,18 @@ class Main(object):
             width, height, width * len(light))
 
     def poll(self, force_refresh=False):
-        display = Gdk.Display.get_default()
-        (screen, x, y, modifier) = display.get_pointer()
-        if x == self.last_x and y == self.last_y:
-            # bail if nothing would be different
-            if not force_refresh and not self.force_refresh:
-                return True
-        self.last_x = x
-        self.last_y = y
+        if self.position_lock:
+            x,y = self.position_x,self.position_y
+        else:
+            display = Gdk.Display.get_default()
+            (screen, x, y, modifier) = display.get_pointer()
+            if x == self.last_x and y == self.last_y:
+                # bail if nothing would be different
+                if not force_refresh and not self.force_refresh:
+                    return True
+            self.last_x = x
+            self.last_y = y
+
         if (x > self.window_x and
                 x <= (self.window_x + self.width + self.decorations_width) and
                 y > self.window_y and
