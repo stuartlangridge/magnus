@@ -63,6 +63,8 @@ class Main(object):
             print("  --force-refresh")
             print("    Refresh continually (according to refresh interval)")
             print("      even if the mouse has not moved")
+            print("  --position x y")
+            print("    Set center of view, disable mouse tracking")
             return 0
 
         if "--force-refresh" in args:
